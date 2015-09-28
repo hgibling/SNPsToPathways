@@ -1,9 +1,17 @@
 ##### Getting Pathway p-value using aSPUpath and HYST #####
 
 library(aSPU)
+library(gage)
 
 
-#generate simulated dataset
+# generate KEGG gene sets
+
+get.gs.kegg <- kegg.gsets(species="hsa", id.type="entrez")
+hsa.gs.kegg <- get.gs.kegg$kg.sets
+
+
+
+# generate simulated dataset
 
 sim <- simPathAR1Snp(nGenes=20, 	# 20 genes in gene set
 	nGenes1=1, 
@@ -31,7 +39,7 @@ ld <- cor(sim$X[sim$Y==0,])
 
 # run HYST algorithm
 
-hyst.result <- Hyst(pvec=logitp, ldmatrix=ld, snp.info=sim$snp.info, gene.info=sim$gene.info)
+hyst.result <- Hyst(pvec=pvals, ldmatrix=ld, snp.info=sim$snp.info, gene.info=sim$gene.info)
 
 # output is a single p-value for the gene set tested
 
