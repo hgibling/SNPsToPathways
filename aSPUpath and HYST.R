@@ -29,8 +29,16 @@ mart <- useMart("ensembl", dataset="hsapiens_gene_ensembl")
 
 gene.info <- getBM(attributes=c("entrezgene", "chromosome_name", "start_position", "end_position"), filters=c("chromosome_name", "entrezgene"), values=list(chromosome_name=c(1:22, "X", "Y"), entrezgene=c(unique.genes)), mart=mart)
 
-# 108 genes are not in this list--are not mapped to a chromosome in biomart
+## 108 genes are not in this list--are not mapped to a chromosome in biomart
 ## some are microRNAs, others unlocalized scaffolds
 ## some are alternate reference loci?
 
+
+# extract gene info for one gene set
+
+genes.in.gs <- function(gene.set, master.list) {
+	set.genes <- as.numeric(master.list[[gene.set]])
+	master.position <- gene.info[,1] %in% set.genes
+	return(gene.info[master.position,])
+}
 
