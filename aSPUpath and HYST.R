@@ -2,57 +2,35 @@
 
 library(aSPU)
 library(gage)
+library(biomaRt)
 
 
 # generate KEGG gene sets
 
 get.gs.kegg <- kegg.gsets(species="hsa", id.type="entrez")
-hsa.gs.kegg <- get.gs.kegg$kg.sets
+gs.kegg <- get.gs.kegg$kg.sets
 
 
+# generate master list of genes in KEGG pathways
 
-# generate simulated dataset
+gene.list <- c()
 
-sim <- simPathAR1Snp(nGenes=20, 	# 20 genes in gene set
-	nGenes1=1, 
-	nSNPlim=c(1,20), 				# between 1 and 20 SNPs per gene
-	nSNP0=1:3, 
-	LOR=0.2, 
-	rholim=c(0,0), 
-	n=100, 
-	MAFlim=c(0.05, 0.4), 
-	p0=0.05)
+for (i in 1:length(gs.kegg)) {
+	genes <- as.numeric(gs.kegg[[i]])
+	gene.list <- c(gene.list, genes)
+}
+
+unique.genes <- unique(gene.list)
 
 
-### HYST ###
+# get chromosome location
 
-# get p-values for each SNP from simulated dataset
+mart <- useMart("ensembl", dataset="hsapiens_gene_ensembl")
 
-pvals <- getlogitp(sim$Y, sim$X)
+gene.info <- getBM(attributes=c("entrezgene", "chromosome_name", "start_position", "end_position"), filters=c("chromosome_name", "entrezgene"), values=list(chromosome_name=c(1:22, "X", "Y"), entrezgene=c(unique.genes)), mart=mart)
 
-
-
-# get correlation matrix for SNPs using controls (to account for linkage disequilibrium)
-
-ld <- cor(sim$X[sim$Y==0,])
+# 108 genes are not in this list--are not mapped to a chromosome in biomart
+## some are microRNAs, others unlocalized scaffolds
+## some are alternate reference loci?
 
 
-# run HYST algorithm
-
-hyst.result <- Hyst(pvec=pvals, ldmatrix=ld, snp.info=sim$snp.info, gene.info=sim$gene.info)
-
-# output is a single p-value for the gene set tested
-
-
-### aSPUpath ###
-
-aspupath.result <- aSPUpath(sim$Y,
-	sim$X,
-	snp.info=sim$snp.info,
-	gene.info=sim$gene.info,
-	model="binomial",			# binomial because using binary traits
-	pow=1:8,					# gamma values fpr SNP power
-	pow2=c(1, 2, 4, 8),			# gamma values for gene power
-	n.perm=1000)				# number of permutations
-	
-# output has all p-values for SNP and gene power combinations, plus an aSPU p-value (from the adaptive model) for the gene set
