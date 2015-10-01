@@ -69,7 +69,7 @@ for (i in 1:length(gs.kegg)) {
 		gene.info=gene.info, 			# gene location info
 		n.perm=1000, 					# 1000 permutations
 		Ps=T)							# using P values instead of Z scores
-	aSPUpath.results[i,1] <- names(gs.kegg[1])
+	aSPUpath.results[i,1] <- names(gs.kegg[i])
 	aSPUpath.results[i,2] <- results[21]
 }
 
@@ -79,3 +79,22 @@ for (i in 1:length(gs.kegg)) {
 aSPUpath.sig <- aSPUpath.results[order(aSPUpath.results$Pval)]
 
 
+### Run HYST for all gene sets
+
+hyst.resuts <- data.frame(Pathway=NA, Pval=NA)
+
+for (i in 1:length(gs.kegg)) {
+	gene.info <- genes.in.gs(i, gs.kegg)
+	ldmatrix <- 
+	results <- Hyst(assoc.data$P, 		# P values of SNPs
+		ldmatrix=ldmatrix, 				# correlation of SNPs to controls
+		snp.info=snp.info, 				# SNP location info
+		gene.info=gene.info) 			# gene location info
+	hyst.resuts[i,1] <- names(gs.kegg[i])
+	hyst.resuts[i,2] <- results[21]
+}
+
+
+# order pathways/gene sets by significance
+
+hyst.sig <- hyst.results[order(hyst.results$Pval)]
