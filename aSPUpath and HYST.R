@@ -4,6 +4,13 @@ library(aSPU)
 library(gage)
 library(biomaRt)
 
+# SNP data needed from Plink:
+	# ID (rs number)
+	# Chromosome location
+	# Base pair location
+	# P value
+	# Correlation data
+
 
 # generate KEGG gene sets
 
@@ -46,7 +53,6 @@ genes.in.gs <- function(gene.set, master.list) {
 # load sample dataset
 
 assoc.data <- read.table("~/Desktop/gwas.assoc", header=T)
-permuted.pvals <- read.csv("~/Desktop/perm_pvalues.txt")
 
 
 # extract snp info
