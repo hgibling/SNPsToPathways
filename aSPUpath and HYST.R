@@ -23,7 +23,7 @@ for (i in 1:length(gs.kegg)) {
 unique.genes <- unique(gene.list)
 
 
-# get chromosome location
+# get chromosome location for the master list of genes
 
 mart <- useMart("ensembl", dataset="hsapiens_gene_ensembl")
 
