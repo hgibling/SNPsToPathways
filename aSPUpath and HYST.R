@@ -4,9 +4,10 @@ library(aSPU)
 library(gage)
 library(biomaRt)
 library(topGO)
+library(GSA)
 
 
-# load sample dataset
+# Load sample dataset
 
 assoc.data <- read.table("~/Desktop/gwas.assoc", header=T)
 
@@ -19,18 +20,23 @@ assoc.data <- read.table("~/Desktop/gwas.assoc", header=T)
 	# Correlation data
 
 
-# generate KEGG gene sets
+# Generate KEGG gene sets
 
-get.gs.kegg <- kegg.gsets(species="hsa", id.type="entrez")
-gs.kegg <- get.gs.kegg$kg.sets
-
-
-# generate GO Biological Pathways gene sets
-
-gs.gobp <- annFUN.org("BP", mapping="org.Hs.eg.db", ID="entrez")
+get.kegg.gs <- kegg.gsets(species="hsa", id.type="entrez")
+kegg.gs <- get.gs.kegg$kg.sets
 
 
-# generate master list of genes in KEGG or GO BP gene sets
+# Generate GO Biological Pathways gene sets
+
+gobp.gs <- annFUN.org("BP", mapping="org.Hs.eg.db", ID="entrez")
+
+
+# Import predefined gene sets
+
+bader.gs <- GSA.read.gmt("~/Desktop/Human_AllPathways_January_28_2015_symbol.gmt")
+
+
+# Generate master list of genes in KEGG or GO BP gene sets
 
 get.master.list <- function(gene.set.list) {
 	gene.list <- c()
@@ -42,11 +48,11 @@ get.master.list <- function(gene.set.list) {
 	return(unique.genes)
 }
 
-kegg.master <- get.master.list(gs.kegg)
-gobp.master <- get.master.list(gs.gobp)
+kegg.master <- get.master.list(kegg.gs)
+gobp.master <- get.master.list(gobp.gs)
 
 
-# get chromosome locations for the KEGG or GO BP master list of genes
+# Get chromosome locations for the KEGG or GO BP master list of genes
 
 mart <- useMart("ensembl", dataset="hsapiens_gene_ensembl")
 
@@ -87,8 +93,8 @@ ld.matrix <-
 
 aSPUpath.kegg <- data.frame(Pathway=NA, Pval=NA)
 
-for (i in 1:length(gs.kegg)) {
-	gene.info <- genes.in.gs(i, gs.kegg, kegg.gene.info)
+for (i in 1:length(kegg.gs)) {
+	gene.info <- genes.in.gs(i, kegg.gs, kegg.gene.info)
 	results.kegg.a <- aSPUsPath(assoc.data$P, 	# P values of SNPs
 		corrSNP=ld.matrix, 				# correlation of SNPs to controls
 		pow=c(1, 2, 4, 8, Inf), 		# SNP gamma values
@@ -97,7 +103,7 @@ for (i in 1:length(gs.kegg)) {
 		gene.info=gene.info, 			# gene location info
 		n.perm=1000, 					# 1000 permutations
 		Ps=T)							# using P values instead of Z scores
-	aSPUpath.kegg[i,1] <- names(gs.kegg[i])
+	aSPUpath.kegg[i,1] <- names(kegg.gs[i])
 	aSPUpath.kegg[i,2] <- results.kegg.a[21]
 }
 
@@ -108,8 +114,8 @@ aSPUpath.kegg.sig <- aSPUpath.kegg[order(aSPUpath.kegg$Pval)]
 
 aSPUpath.gobp <- data.frame(Pathway=NA, Pval=NA)
 
-for (i in 1:length(gs.gobp)) {
-	gene.info <- genes.in.gs(i, gs.gobp, gobp.gene.info)
+for (i in 1:length(gobp.gs)) {
+	gene.info <- genes.in.gs(i, gobp.gs, gobp.gene.info)
 	results.gobp.a <- aSPUsPath(assoc.data$P, 	# P values of SNPs
 		corrSNP=ld.matrix, 				# correlation of SNPs to controls
 		pow=c(1, 2, 4, 8, Inf), 		# SNP gamma values
@@ -118,7 +124,7 @@ for (i in 1:length(gs.gobp)) {
 		gene.info=gene.info, 			# gene location info
 		n.perm=1000, 					# 1000 permutations
 		Ps=T)							# using P values instead of Z scores
-	aSPUpath.gobp[i,1] <- names(gs.gobp[i])
+	aSPUpath.gobp[i,1] <- names(gobp.gs[i])
 	aSPUpath.gobp[i,2] <- results.gobp.a[21]
 }
 
@@ -131,13 +137,13 @@ aSPUpath.gobp.sig <- aSPUpath.gobp[order(aSPUpath.gobp$Pval)]
 
 hyst.kegg <- data.frame(Pathway=NA, Pval=NA)
 
-for (i in 1:length(gs.kegg)) {
-	gene.info <- genes.in.gs(i, gs.kegg, kegg.gene.info)
+for (i in 1:length(kegg.gs)) {
+	gene.info <- genes.in.gs(i, kegg.gs, kegg.gene.info)
 	results.kegg.h <- Hyst(assoc.data$P, 	# P values of SNPs
 		ldmatrix=ld.matrix, 			# correlation of SNPs to controls
 		snp.info=snp.info, 				# SNP location info
 		gene.info=gene.info) 			# gene location info
-	hyst.kegg[i,1] <- names(gs.kegg[i])
+	hyst.kegg[i,1] <- names(kegg.gs[i])
 	hyst.kegg[i,2] <- results.kegg.h[21]
 }
 
@@ -148,13 +154,13 @@ hyst.kegg.sig <- hyst.kegg[order(hyst.kegg$Pval)]
 
 hyst.gobp <- data.frame(Pathway=NA, Pval=NA)
 
-for (i in 1:length(gs.kegg)) {
-	gene.info <- genes.in.gs(i, gs.gobp, gobp.gene.info)
+for (i in 1:length(gobp.gs)) {
+	gene.info <- genes.in.gs(i, gobp.gs, gobp.gene.info)
 	results.gobp.h <- Hyst(assoc.data$P, 	# P values of SNPs
 		ldmatrix=ld.matrix, 			# correlation of SNPs to controls
 		snp.info=snp.info, 				# SNP location info
 		gene.info=gene.info) 			# gene location info
-	hyst.gobp[i,1] <- names(gs.kegg[i])
+	hyst.gobp[i,1] <- names(gobp.gs[i])
 	hyst.gobp[i,2] <- results.gobp.h[21]
 }
 
