@@ -5,6 +5,7 @@ library(gage)
 library(biomaRt)
 library(topGO)
 library(GSA)
+library(impute)
 
 
 ### Load sample dataset
@@ -113,9 +114,15 @@ rownames(control.data) <- control.data$SNP
 control.genotypes <- control.data[,-(1:6)]
 
 
+# Impute missing values
+
+control.imputed <- impute.knn(as.matrix(control.genotypes))
+control.rounded <- round(control.imputed$data)
+
+
 # Transpose so columns are SNPs
 
-control.trans <- t(control.genotypes)
+control.trans <- t(control.rounded)
 
 ld.matrix <- cor(control.trans)
 
