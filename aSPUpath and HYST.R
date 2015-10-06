@@ -64,7 +64,7 @@ gobp.master <- as.numeric(get.master.list(gobp.gs))
 bader.master <- get.master.list(bader.gs)	# gene symbols, so not numeric
 
 
-# Get chromosome locations for the master list of genes for each collection
+### Get chromosome locations for the master list of genes for each collection
 
 mart <- useMart("ensembl", dataset="hsapiens_gene_ensembl")
 
@@ -80,12 +80,12 @@ kegg.gene.info <- get.gene.info(kegg.master)
 gobp.gene.info <- get.gene.info(gobp.master)
 bader.gene.info <- get.gene.info(bader.master, type="symbol")
 
-## some genes are not in these lists--are not mapped to a chromosome in biomart
-## some are microRNAs, others unlocalized scaffolds
-## some are alternate reference loci?
+# some genes are not in these lists--are not mapped to a chromosome in biomart
+# some are microRNAs, others unlocalized scaffolds
+# some are alternate reference loci?
 
 
-# Extract gene info for one gene set
+### Extract gene info for one gene set
 
 genes.in.gs <- function(gene.set.position, gene.set.list, master.gene.info) {
 	set.genes <- gene.set.list[[gene.set.position]]
@@ -118,7 +118,7 @@ control.trans <- t(control.genotypes)
 ld.matrix <- cor(control.trans)
 
 
-### Run aSPUpath
+### Run aSPUpath or HYST for any of the three gene set colelctions
 
 run.snp.gsa <- function(collection, method) {
 	results.df <- data.frame(Pathway=NA, Pval=NA)
