@@ -7,7 +7,7 @@ library(topGO)
 library(GSA)
 
 
-# Load sample dataset
+### Load sample dataset
 
 assoc.data <- read.table("~/Desktop/gwas.assoc", header=T)
 
@@ -71,8 +71,10 @@ mart <- useMart("ensembl", dataset="hsapiens_gene_ensembl")
 get.gene.info <- function (master.list, type="ID") {
 	if (type=="symbol") {
 		all.gene.info <- getBM(attributes=c("hgnc_symbol", "chromosome_name", 		"start_position", "end_position"), filters=c("chromosome_name", 		"hgnc_symbol"), values=list(chromosome_name=c(1:22, "X", "Y"), 					hgnc_symbol=c(master.list)), mart=mart)
-	} else {
+	} else if (type=="ID") {
 		all.gene.info <- getBM(attributes=c("entrezgene", "chromosome_name", 		"start_position", "end_position"), filters=c("chromosome_name", 		"entrezgene"), values=list(chromosome_name=c(1:22, "X", "Y"), 					entrezgene=c(master.list)), mart=mart)
+	} else {
+		stop("Type of gene identification must be either 'ID' (default) or 		'symbol'.")
 	}
 }
 
@@ -131,9 +133,11 @@ run.snp.gsa <- function(collection, method) {
 	} else if (collection=="bader") {
 		gs <- bader.gs
 		all.gene.info <- bader.gene.info
-	} 
+	} else {
+		stop("Must indicate if collection is 'kegg', 'gobp', or 'bader'.")
+	}
 	if (method=="aSPUpath") {
-		for (in in 1:length(gs)) {
+		for (i in 1:length(gs)) {
 			gene.info <- genes.in.gs(i, gs, all.gene.info)
 			results <- aSPUsPath(assoc.data$P, 	# P values of SNPs
 				corrSNP=ld.matrix,				# correlation of SNPs to controls
@@ -156,6 +160,8 @@ run.snp.gsa <- function(collection, method) {
 			results.df[i,1] <- names(gs[i])
 			results.df[i,2] <- results[21]
 		}
+	} else {
+		stop("Must indicate if method of analysis is 'aSPUpath' or 'HYST'.")
 	}
 	return(results.df)
 }
