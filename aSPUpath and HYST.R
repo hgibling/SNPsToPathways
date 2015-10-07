@@ -155,7 +155,7 @@ run.snp.gsa <- function(collection, method) {
 				n.perm=1000,					# 1000 permutations
 				Ps=T)							# P values instead of Z scores
 			results.df[i,1] <- names(gs[i])
-			results.df[i,2] <- results[21]
+			results.df[i,2] <- results[length(results)] #aSPUpath value is last
 		}
 	} else if (method=="HYST") {
 		for (i in 1:length(gs)) {
