@@ -129,7 +129,7 @@ ld.matrix <- cor(control.trans)
 
 ### Run aSPUpath or HYST for any of the three gene set colelctions
 
-run.snp.gsa <- function(collection, method) {
+run.snp.gsa <- function(collection, method, min=10, max=300) {
 	results.df <- data.frame(Pathway=NA, Pval=NA)
 	if (collection=="kegg") {
 		gs <- kegg.gs
@@ -145,27 +145,28 @@ run.snp.gsa <- function(collection, method) {
 	}
 	if (method=="aSPUpath") {
 		for (i in 1:length(gs)) {
-			gene.info <- genes.in.gs(i, gs, all.gene.info)
-			results <- aSPUsPath(assoc.data$P, 	# P values of SNPs
-				corrSNP=ld.matrix,				# correlation of SNPs to controls
-				pow=c(1, 2, 4, 8, Inf),			# SNP gamma values
-				pow2=c(1, 2, 4, 8),				# gene gamma values
-				snp.info=snp.info,				# SNP location info
-				gene.info=gene.info,			# gene location info
-				n.perm=1000,					# 1000 permutations
-				Ps=T)							# P values instead of Z scores
-			results.df[i,1] <- names(gs[i])
-			results.df[i,2] <- results[length(results)] #aSPUpath value is last
+			if (length(gs[[i]]) > min & length(gs[[i]]) < max) {
+				gene.info <- genes.in.gs(i, gs, all.gene.info)
+				results <- aSPUsPath(assoc.data$P, 	# P values of SNPs
+					corrSNP=ld.matrix,				# correlation of SNPs
+					snp.info=snp.info,				# SNP location info
+					gene.info=gene.info,			# gene location info
+					Ps=T)							# P values instead of Z scores
+				results.df[i,1] <- names(gs[i])
+				results.df[i,2] <- results[length(results)] #aSPUpath is last
+			}
 		}
 	} else if (method=="HYST") {
 		for (i in 1:length(gs)) {
-			gene.info <- genes.in.gs(i, gs, all.gene.info)
-			results <- Hyst(assoc.data$P,
-				ldmatrix=ld.matrix,
-				snp.info=snp.info,
-				gene.info=gene.info)
-			results.df[i,1] <- names(gs[i])
-			results.df[i,2] <- results[21]
+			if (length(gs[[i]]) > min & length(gs[[i]]) < max) {
+				gene.info <- genes.in.gs(i, gs, all.gene.info)
+				results <- Hyst(assoc.data$P,
+					ldmatrix=ld.matrix,
+					snp.info=snp.info,
+					gene.info=gene.info)
+				results.df[i,1] <- names(gs[i])
+				results.df[i,2] <- results[21]
+			}
 		}
 	} else {
 		stop("Must indicate if method of analysis is 'aSPUpath' or 'HYST'.")
