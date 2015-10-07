@@ -197,3 +197,37 @@ gobp.hyst.sig <- gobp.hyst[order(gobp.hyst$Pval)]
 
 bader.hyst <- run.snp.gsa(collection="bader", method="HYST")
 bader.hyst.sig <- bader.hyst[order(bader.hyst$Pval)]
+
+
+### aSPUpath for raw genotype data (not p values)
+
+phenotypes <- c(rep(0, 144), rep(1, 145))	# sample for now
+
+run.aspupath.raw <- function(collection) {
+	results.df <- data.frame(Pathway=NA, Pval=NA)
+	if (collection=="kegg") {
+		gs <- kegg.gs
+		all.gene.info <- kegg.gene.info
+	} else if (collection=="gobp") {
+		gs <- gobp.gs
+		all.gene.info <- gobp.gene.info
+	} else if (collection=="bader") {
+		gs <- bader.gs
+		all.gene.info <- bader.gene.info
+	} else {
+		stop("Must indicate if collection is 'kegg', 'gobp', or 'bader'.")
+	}
+	for (i in 1:length(gs)) {
+		gene.info <- genes.in.gs(i, gs, all.gene.info)
+		results <- aSPUpath(phenotypes, 	# phenotype data
+			control.trans,					# genotype data
+			snp.info=snp.info,				# SNP location info	
+			gene.info=gene.info)			# gene location info			
+		results.df[i,1] <- names(gs[i])
+		results.df[i,2] <- results[length(results)] #aSPUpath is last
+		}
+	return(results.df)
+}
+
+test <- run.aspupath.raw(collection="kegg")
+	
