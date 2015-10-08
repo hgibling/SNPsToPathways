@@ -136,7 +136,13 @@ snps.in.gs <- function(gene.info) {
 
 ### Generate linkage disequilibrium matrix (SNP correlation matrix) for SNPs within a gene set
 
-
+get.ld.matrix <- function(snp.info) {
+	position <- which(rownames(control.rounded) %in% snp.info[,1]==T)
+	control.snps <- control.rounded[position,]
+	control.trans <- t(control.snps)
+	ld.matrix <- cor(control.trans)
+	return(ld.matrix)
+}
 
 
 ### Run aSPUpath or HYST for any of the three gene set colelctions
@@ -159,8 +165,8 @@ run.snp.gsa <- function(collection, method, min=10, max=300) {
 		for (i in 1:length(gs)) {
 			if (length(gs[[i]]) > min & length(gs[[i]]) < max) {
 				gene.info <- genes.in.gs(i, gs, all.gene.info)
-				snp.info <- snps.in.gs()
-				ld.matrix <- 
+				snp.info <- snps.in.gs(gene.info)
+				ld.matrix <- get.ld.matrix(snp.info)
 				results <- aSPUsPath(assoc.data$P, 	# P values of SNPs
 					corrSNP=ld.matrix,				# correlation of SNPs
 					snp.info=snp.info,				# SNP location info
@@ -174,8 +180,8 @@ run.snp.gsa <- function(collection, method, min=10, max=300) {
 		for (i in 1:length(gs)) {
 			if (length(gs[[i]]) > min & length(gs[[i]]) < max) {
 				gene.info <- genes.in.gs(i, gs, all.gene.info)
-				snp.info <- snps.in.gs()
-				ld.matrix <- 
+				snp.info <- snps.in.gs(gene.info)
+				ld.matrix <- get.ld.matrix(snp.info)
 				results <- Hyst(assoc.data$P,
 					ldmatrix=ld.matrix,
 					snp.info=snp.info,
