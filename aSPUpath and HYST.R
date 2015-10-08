@@ -124,11 +124,11 @@ control.rounded <- round(control.imputed$data)
 ### Find SNPs associated with genes in a gene set
 
 snps.in.gs <- function(gene.info) {
-	snp.info <- data.frame(SNP=NA, Chrom=NA, Position=NA)
+	snp.info <- data.frame(NULL)
 	for (i in 1:nrow(gene.info)) {
 		snp.info.gene <- filter(all.snp.info, Chrom==gene.info[i,2]) %>%
 		filter(Position > gene.info[i,3]-20000 & Position < gene.info[i,4]+20000)
-		snp.info <- na.omit(rbind(snp.info, snp.info.gene))
+		snp.info <- rbind(snp.info, snp.info.gene)
 	}
 	return(snp.info)
 }
