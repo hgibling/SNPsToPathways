@@ -6,6 +6,7 @@ library(biomaRt)
 library(topGO)
 library(GSA)
 library(impute)
+library(dplyr)
 
 
 ### Load sample dataset
@@ -99,10 +100,10 @@ genes.in.gs <- function(gene.set.position, gene.set.list, master.gene.info) {
 
 ### Extract SNP info from dataset
 
-snp.info <- data.frame(SNP=assoc.data[,2], Chrom=assoc.data[,1], Position=assoc.data[,3])
+all.snp.info <- data.frame(SNP=assoc.data[,2], Chrom=assoc.data[,1], Position=assoc.data[,3])
 
 
-### Generate linkage disequilibrium matrix (SNP correlation matrix)
+### Prepare genotype data for generating linkage disequilibrium matrix (SNP correlation matrix)
 
 control.data <- read.table("~/Desktop/GO_Quad_DATA-clean-CEU.traw", stringsAsFactors=F, header=T)
 
@@ -120,18 +121,20 @@ control.imputed <- impute.knn(as.matrix(control.genotypes))
 control.rounded <- round(control.imputed$data)
 
 
-# Find SNPs associated with genes in a gene set
+### Find SNPs associated with genes in a gene set
+
+snps.in.gs <- function(gene.info) {
+	snp.info <- data.frame(SNP=NA, Chrom=NA, Position=NA)
+	for (i in 1:nrow(gene.info)) {
+		snp.info.gene <- filter(all.snp.info, Chrom==gene.info[i,2]) %>%
+		filter(Position > gene.info[i,3]-20000 & Position < gene.info[i,4]+20000)
+		snp.info <- na.omit(rbind(snp.info, snp.info.gene))
+	}
+	return(snp.info)
+}
 
 
-
-
-
-
-
-
-
-
-
+### Generate linkage disequilibrium matrix (SNP correlation matrix) for SNPs within a gene set
 
 
 
