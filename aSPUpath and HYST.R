@@ -128,7 +128,7 @@ snps.in.gs <- function(gene.info) {
 	for (i in 1:nrow(gene.info)) {
 		snp.info.gene <- filter(all.snp.info, Chrom==gene.info[i,2]) %>%
 		filter(Position > gene.info[i,3]-20000 & Position < gene.info[i,4]+20000)
-		snp.info <- rbind(snp.info, snp.info.gene)
+		snp.info <- unique(rbind(snp.info, snp.info.gene))
 	}
 	return(snp.info)
 }
