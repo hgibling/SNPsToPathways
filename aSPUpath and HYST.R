@@ -141,7 +141,7 @@ get.ld.matrix <- function(snp.info) {
 	control.snps <- control.rounded[position,]
 	control.trans <- t(control.snps)
 	ld.matrix <- cor(control.trans)
-	if (complete.cases(ld.matrix)==F) {
+	if (anyNA(ld.matrix)==T) {
 		pos <- which(is.na(ld.matrix[1,])==T)
 		ld.matrix <- ld.matrix[-pos, -pos]
 	}
@@ -200,30 +200,20 @@ run.snp.gsa <- function(collection, method, min=10, max=300) {
 	} else {
 		stop("Must indicate if method of analysis is 'aSPUpath' or 'HYST'.")
 	}
-	return(results.df)
+	return(results.df[order(results.df$Pval)])
 }
 
 
 # Run aSPUpath and order results by significance
 
 kegg.aSPUpath <- run.snp.gsa(collection="kegg", method="aSPUpath")
-kegg.aSPUpath.sig <- kegg.aSPUpath[order(kegg.aSPUpath$Pval)]
-
 gobp.aSPUpath <- run.snp.gsa(collection="gobp", method="aSPUpath")
-gobp.aSPUpath.sig <- gobp.aSPUpath[order(gobp.aSPUpath$Pval)]
-
 bader.aSPUpath <- run.snp.gsa(collection="bader", method="aSPUpath")
-bader.aSPUpath.sig <- bader.aSPUpath[order(bader.aSPUpath$Pval)]
 
 
 # Run HYST and order results by significance
 
 kegg.hyst <- run.snp.gsa(collection="kegg", method="HYST")
-kegg.hyst.sig <- kegg.hyst[order(kegg.hyst$Pval)]
-
 gobp.hyst <- run.snp.gsa(collection="gobp", method="HYST")
-gobp.hyst.sig <- gobp.hyst[order(gobp.hyst$Pval)]
-
 bader.hyst <- run.snp.gsa(collection="bader", method="HYST")
-bader.hyst.sig <- bader.hyst[order(bader.hyst$Pval)]
 	
