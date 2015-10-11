@@ -100,6 +100,11 @@ genes.in.gs <- function(gene.set.position, gene.set.list, master.gene.info) {
 
 ### Extract SNP info from dataset
 
+# Remove SNPs with MAF < 0.05% in controls
+
+rare.snps <- which(assoc.data$F_U<0.05)
+assoc.data <- assoc.data[-rare.snps,]
+
 all.snp.info <- data.frame(SNP=assoc.data[,2], Chrom=assoc.data[,1], Position=assoc.data[,3])
 
 
@@ -113,6 +118,11 @@ rownames(control.data) <- control.data$SNP
 # Remove uneccesary columns
 
 control.genotypes <- control.data[,-(1:6)]
+
+
+# Remove SNPs with MAF < 0.05 in controls
+
+control.genotypes <- control.genotypes[-rare.snps,]
 
 
 # Impute missing values
@@ -178,6 +188,7 @@ run.snp.gsa <- function(collection, method, min=10, max=300) {
 					Ps=T)							# P values instead of Z scores
 				results.df[i,1] <- names(gs[i])
 				results.df[i,2] <- results[length(results)] #aSPUpath is last
+				results.df <- na.omit(results.df)
 				print(paste("analyzed gene set", i))
 			} else {
 				print(paste("skipped gene set", i))
@@ -194,7 +205,8 @@ run.snp.gsa <- function(collection, method, min=10, max=300) {
 					snp.info=snp.info,
 					gene.info=gene.info)
 				results.df[i,1] <- names(gs[i])
-				results.df[i,2] <- results[21]
+				results.df[i,2] <- results[length(results)]
+				results.df <- na.omit(results.df)
 			}
 		}
 	} else {
