@@ -188,7 +188,6 @@ run.snp.gsa <- function(collection, method, min=10, max=300) {
 					Ps=T)							# P values instead of Z scores
 				results.df[i,1] <- names(gs[i])
 				results.df[i,2] <- results[length(results)] #aSPUpath is last
-				results.df <- na.omit(results.df)
 				print(paste("analyzed gene set", i))
 			} else {
 				print(paste("skipped gene set", i))
@@ -206,13 +205,17 @@ run.snp.gsa <- function(collection, method, min=10, max=300) {
 					gene.info=gene.info)
 				results.df[i,1] <- names(gs[i])
 				results.df[i,2] <- results[length(results)]
-				results.df <- na.omit(results.df)
+				print(paste("analyzed gene set", i))
+			} else {
+				print(paste("skipped gene set", i))
 			}
 		}
 	} else {
 		stop("Must indicate if method of analysis is 'aSPUpath' or 'HYST'.")
 	}
-	return(results.df[order(results.df$Pval)])
+	results.df <- na.omit(results.df) %>%
+	arrange(Pval)
+	return(results.df)
 }
 
 
