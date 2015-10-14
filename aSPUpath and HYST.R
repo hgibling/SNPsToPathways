@@ -132,6 +132,7 @@ snps.in.gs <- function(gene.info) {
 	}
 	return(snp.info)
 }
+# double check that this works for X and Y chromosomes
 
 
 ### Generate linkage disequilibrium matrix (SNP correlation matrix) for SNPs within a gene set
@@ -174,6 +175,7 @@ run.snp.gsa <- function(collection, method, min=10, max=300) {
 					Ps=T)							# P values instead of Z scores
 				results.df[i,1] <- names(gs[i])
 				results.df[i,2] <- results[length(results)] #aSPUpath is last
+				print(results)
 			}
 		}
 	} else if (method=="HYST") {
