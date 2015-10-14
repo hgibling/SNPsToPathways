@@ -140,6 +140,7 @@ snps.in.gs <- function(gene.info) {
 		filter(Position > gene.info[i,3]-20000 & Position < gene.info[i,4]+20000)
 		snp.info <- unique(rbind(snp.info, snp.info.gene))
 	}
+	snp.info <- snp.info[order(snp.info$SNP),]
 	return(snp.info)
 }
 # double check that this works for X and Y chromosomes
@@ -150,7 +151,8 @@ snps.in.gs <- function(gene.info) {
 get.ld.matrix <- function(snp.info) {
 	position <- which(rownames(control.rounded) %in% snp.info[,1]==T)
 	control.snps <- control.rounded[position,]
-	control.trans <- t(control.snps)
+	control.order <- control.snps[order(rownames(control.snps)),]
+	control.trans <- t(control.order)
 	ld.matrix <- cor(control.trans)
 	if (anyNA(ld.matrix)==T) {
 		pos <- which(is.na(ld.matrix[1,])==T)
@@ -165,6 +167,7 @@ get.ld.matrix <- function(snp.info) {
 get.p.values <- function(snp.info) {
 	position <- which(assoc.clean$SNP %in% snp.info[,1]==T)
 	snps <- assoc.clean[position,]
+	snps <- snps[order(snps$SNP),]
 	return(snps$P)
 }
 
