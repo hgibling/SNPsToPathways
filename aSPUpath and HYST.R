@@ -100,6 +100,11 @@ genes.in.gs <- function(gene.set.position, gene.set.list, master.gene.info) {
 
 ### Extract SNP info from dataset
 
+# Remove SNPs with MAF < 0.05% in controls
+
+rare.snps <- which(assoc.data$F_U<0.05)
+assoc.data <- assoc.data[-rare.snps,]
+
 all.snp.info <- data.frame(SNP=assoc.data[,2], Chrom=assoc.data[,1], Position=assoc.data[,3])
 
 
@@ -115,6 +120,11 @@ rownames(control.data) <- control.data$SNP
 control.genotypes <- control.data[,-(1:6)]
 
 
+# Remove SNPs with MAF < 0.05 in controls
+
+control.genotypes <- control.genotypes[-rare.snps,]
+
+
 # Impute missing values
 
 control.imputed <- impute.knn(as.matrix(control.genotypes))
@@ -124,11 +134,11 @@ control.rounded <- round(control.imputed$data)
 ### Find SNPs associated with genes in a gene set
 
 snps.in.gs <- function(gene.info) {
-	snp.info <- data.frame(SNP=NA, Chrom=NA, Position=NA)
+	snp.info <- data.frame(NULL)
 	for (i in 1:nrow(gene.info)) {
 		snp.info.gene <- filter(all.snp.info, Chrom==gene.info[i,2]) %>%
 		filter(Position > gene.info[i,3]-20000 & Position < gene.info[i,4]+20000)
-		snp.info <- na.omit(rbind(snp.info, snp.info.gene))
+		snp.info <- unique(rbind(snp.info, snp.info.gene))
 	}
 	return(snp.info)
 }
@@ -142,6 +152,10 @@ get.ld.matrix <- function(snp.info) {
 	control.snps <- control.rounded[position,]
 	control.trans <- t(control.snps)
 	ld.matrix <- cor(control.trans)
+	if (anyNA(ld.matrix)==T) {
+		pos <- which(is.na(ld.matrix[1,])==T)
+		ld.matrix <- ld.matrix[-pos, -pos]
+	}
 	return(ld.matrix)
 }
 
@@ -175,7 +189,9 @@ run.snp.gsa <- function(collection, method, min=10, max=300) {
 					Ps=T)							# P values instead of Z scores
 				results.df[i,1] <- names(gs[i])
 				results.df[i,2] <- results[length(results)] #aSPUpath is last
-				print(results)
+				print(paste("analyzed gene set", i))
+			} else {
+				print(paste("skipped gene set", i))
 			}
 		}
 	} else if (method=="HYST") {
@@ -189,12 +205,17 @@ run.snp.gsa <- function(collection, method, min=10, max=300) {
 					snp.info=snp.info,
 					gene.info=gene.info)
 				results.df[i,1] <- names(gs[i])
-				results.df[i,2] <- results[21]
+				results.df[i,2] <- results[length(results)]
+				print(paste("analyzed gene set", i))
+			} else {
+				print(paste("skipped gene set", i))
 			}
 		}
 	} else {
 		stop("Must indicate if method of analysis is 'aSPUpath' or 'HYST'.")
 	}
+	results.df <- na.omit(results.df) %>%
+	arrange(Pval)
 	return(results.df)
 }
 
@@ -202,23 +223,13 @@ run.snp.gsa <- function(collection, method, min=10, max=300) {
 # Run aSPUpath and order results by significance
 
 kegg.aSPUpath <- run.snp.gsa(collection="kegg", method="aSPUpath")
-kegg.aSPUpath.sig <- kegg.aSPUpath[order(kegg.aSPUpath$Pval)]
-
 gobp.aSPUpath <- run.snp.gsa(collection="gobp", method="aSPUpath")
-gobp.aSPUpath.sig <- gobp.aSPUpath[order(gobp.aSPUpath$Pval)]
-
 bader.aSPUpath <- run.snp.gsa(collection="bader", method="aSPUpath")
-bader.aSPUpath.sig <- bader.aSPUpath[order(bader.aSPUpath$Pval)]
 
 
 # Run HYST and order results by significance
 
 kegg.hyst <- run.snp.gsa(collection="kegg", method="HYST")
-kegg.hyst.sig <- kegg.hyst[order(kegg.hyst$Pval)]
-
 gobp.hyst <- run.snp.gsa(collection="gobp", method="HYST")
-gobp.hyst.sig <- gobp.hyst[order(gobp.hyst$Pval)]
-
 bader.hyst <- run.snp.gsa(collection="bader", method="HYST")
-bader.hyst.sig <- bader.hyst[order(bader.hyst$Pval)]
 	
