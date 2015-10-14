@@ -264,23 +264,33 @@ control.genotypes <- control.data[,-(1:6)]
 case.genotypes <- case.data[,-(1:6)]
 
 
+# Bind cases and controls
+
+tcontrol <- t(control.genotypes)
+tcase <- t(case.genotypes)
+
+all.genotypes <- rbind(tcontrol, tcase)
+
+
+# Get SNP genotypes for a gene set
+
+get.snp.geno <- function(genotypes, snp.info) {
+	position <- which(colnames(genotypes) %in% snp.info[,1]==T)
+	snps <- genotypes[,position]
+	snps.order <- snps[,order(colnames(snps))]
+	return(snps.order)
+}
+
+
 # Get phenotype vector
 
 pheno <- c(rep(0, ncol(control.genotypes)), rep(1, ncol(case.genotypes)))
 
 
-# Bind cases and controls
-
-tcontrol <- t(control.rounded)
-tcase <- t(case.rounded)
-
-all.genotypes <- rbind(tcontrol, tcase)
-
-
 run.aspupath <- function(collection, phenotypes, genotypes, min=10, max=300) {
 	results.df <- data.frame(Pathway=NA, Pval=NA)
 	if (collection=="kegg") {
-		gs <- kegg.gs
+		gs <- kegg.gs[1:5]
 		all.gene.info <- kegg.gene.info
 	} else if (collection=="gobp") {
 		gs <- gobp.gs
@@ -295,8 +305,9 @@ run.aspupath <- function(collection, phenotypes, genotypes, min=10, max=300) {
 		if (length(gs[[i]]) > min & length(gs[[i]]) < max) {
 			gene.info <- genes.in.gs(i, gs, all.gene.info)
 			snp.info <- snps.in.gs(gene.info)
+			geno <- get.snp.geno(genotypes, snp.info)
 			results <- aSPUpath(phenotypes, 	# P values of SNPs
-				genotypes,				# correlation of SNPs
+				geno,							# correlation of SNPs
 				snp.info=snp.info,				# SNP location info
 				gene.info=gene.info)			# gene location info
 			results.df[i,1] <- names(gs[i])
