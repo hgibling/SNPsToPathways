@@ -250,20 +250,18 @@ bader.hyst <- run.snp.gsa(collection="bader", method="HYST")
 
 ### Data prep for running aSPUpath on raw genotypes instead of p values
 
+control.data <- read.table("~/Desktop/GO_Quad_DATA-clean-CEU.traw", stringsAsFactors=F, header=T)
+
 case.data <- read.table("~/Desktop/GO_Quad_DATA-clean-ASW.traw", stringsAsFactors=F, header=T)
 
+rownames(control.data) <- control.data$SNP
 rownames(case.data) <- case.data$SNP
 
 	
 # Remove uneccesary columns
 
+control.genotypes <- control.data[,-(1:6)]
 case.genotypes <- case.data[,-(1:6)]
-
-
-# Impute missing values
-
-case.imputed <- impute.knn(as.matrix(case.genotypes))
-case.rounded <- round(case.imputed$data)
 
 
 # Get phenotype vector
