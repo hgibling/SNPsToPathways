@@ -246,4 +246,71 @@ bader.aSPUpath <- run.snp.gsa(collection="bader", method="aSPUpath")
 kegg.hyst <- run.snp.gsa(collection="kegg", method="HYST")
 gobp.hyst <- run.snp.gsa(collection="gobp", method="HYST")
 bader.hyst <- run.snp.gsa(collection="bader", method="HYST")
+
+
+### Data prep for running aSPUpath on raw genotypes instead of p values
+
+case.data <- read.table("~/Desktop/GO_Quad_DATA-clean-ASW.traw", stringsAsFactors=F, header=T)
+
+rownames(case.data) <- case.data$SNP
+
 	
+# Remove uneccesary columns
+
+case.genotypes <- case.data[,-(1:6)]
+
+
+# Impute missing values
+
+case.imputed <- impute.knn(as.matrix(case.genotypes))
+case.rounded <- round(case.imputed$data)
+
+
+# Get phenotype vector
+
+pheno <- c(rep(0, ncol(control.genotypes)), rep(1, ncol(case.genotypes)))
+
+
+# Bind cases and controls
+
+tcontrol <- t(control.rounded)
+tcase <- t(case.rounded)
+
+all.genotypes <- rbind(tcontrol, tcase)
+
+
+run.aspupath <- function(collection, phenotypes, genotypes, min=10, max=300) {
+	results.df <- data.frame(Pathway=NA, Pval=NA)
+	if (collection=="kegg") {
+		gs <- kegg.gs
+		all.gene.info <- kegg.gene.info
+	} else if (collection=="gobp") {
+		gs <- gobp.gs
+		all.gene.info <- gobp.gene.info
+	} else if (collection=="bader") {
+		gs <- bader.gs
+		all.gene.info <- bader.gene.info
+	} else {
+		stop("Must indicate if collection is 'kegg', 'gobp', or 'bader'.")
+	}
+	for (i in 1:length(gs)) {
+		if (length(gs[[i]]) > min & length(gs[[i]]) < max) {
+			gene.info <- genes.in.gs(i, gs, all.gene.info)
+			snp.info <- snps.in.gs(gene.info)
+			results <- aSPUpath(phenotypes, 	# P values of SNPs
+				genotypes,				# correlation of SNPs
+				snp.info=snp.info,				# SNP location info
+				gene.info=gene.info)			# gene location info
+			results.df[i,1] <- names(gs[i])
+			results.df[i,2] <- results[length(results)] #aSPUpath is last
+			print(paste("analyzed gene set", i))
+		} else {
+			print(paste("skipped gene set", i))
+		}
+	}
+	results.df <- na.omit(results.df) %>%
+	arrange(Pval)
+	return(results.df)
+}
+
+test <- run.aspupath(collection="kegg", phenotypes=pheno, genotypes=all.genotypes)
