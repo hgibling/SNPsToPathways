@@ -103,9 +103,9 @@ genes.in.gs <- function(gene.set.position, gene.set.list, master.gene.info) {
 # Remove SNPs with MAF < 0.05% in controls
 
 rare.snps <- which(assoc.data$F_U<0.05)
-assoc.data <- assoc.data[-rare.snps,]
+assoc.clean <- assoc.data[-rare.snps,]
 
-all.snp.info <- data.frame(SNP=assoc.data[,2], Chrom=assoc.data[,1], Position=assoc.data[,3])
+clean.snp.info <- data.frame(SNP=assoc.clean[,2], Chrom=assoc.clean[,1], Position=assoc.clean[,3])
 
 
 ### Prepare genotype data for generating linkage disequilibrium matrix (SNP correlation matrix)
@@ -122,12 +122,12 @@ control.genotypes <- control.data[,-(1:6)]
 
 # Remove SNPs with MAF < 0.05 in controls
 
-control.genotypes <- control.genotypes[-rare.snps,]
+control.genotypes.clean <- control.genotypes[-rare.snps,]
 
 
 # Impute missing values
 
-control.imputed <- impute.knn(as.matrix(control.genotypes))
+control.imputed <- impute.knn(as.matrix(control.genotypes.clean))
 control.rounded <- round(control.imputed$data)
 
 
@@ -160,6 +160,15 @@ get.ld.matrix <- function(snp.info) {
 }
 
 
+### Get P values for only those SNPs within a gene set
+
+get.p.values <- function(snp.info) {
+	position <- which(assoc.clean$SNP %in% snp.info[,1]==T)
+	snps <- assoc.clean[position,]
+	return(snps$P)
+}
+
+
 ### Run aSPUpath or HYST for any of the three gene set colelctions
 
 run.snp.gsa <- function(collection, method, min=10, max=300) {
@@ -181,8 +190,9 @@ run.snp.gsa <- function(collection, method, min=10, max=300) {
 			if (length(gs[[i]]) > min & length(gs[[i]]) < max) {
 				gene.info <- genes.in.gs(i, gs, all.gene.info)
 				snp.info <- snps.in.gs(gene.info)
+				snp.pvals <- get.p.values(snp.info)
 				ld.matrix <- get.ld.matrix(snp.info)
-				results <- aSPUsPath(assoc.data$P, 	# P values of SNPs
+				results <- aSPUsPath(snp.pvals, 	# P values of SNPs
 					corrSNP=ld.matrix,				# correlation of SNPs
 					snp.info=snp.info,				# SNP location info
 					gene.info=gene.info,			# gene location info
@@ -199,8 +209,9 @@ run.snp.gsa <- function(collection, method, min=10, max=300) {
 			if (length(gs[[i]]) > min & length(gs[[i]]) < max) {
 				gene.info <- genes.in.gs(i, gs, all.gene.info)
 				snp.info <- snps.in.gs(gene.info)
+				snp.pvals <- get.p.values(snp.info)
 				ld.matrix <- get.ld.matrix(snp.info)
-				results <- Hyst(assoc.data$P,
+				results <- Hyst(snp.pvals,
 					ldmatrix=ld.matrix,
 					snp.info=snp.info,
 					gene.info=gene.info)
@@ -220,14 +231,14 @@ run.snp.gsa <- function(collection, method, min=10, max=300) {
 }
 
 
-# Run aSPUpath and order results by significance
+# Run aSPUpath on gene set collections
 
 kegg.aSPUpath <- run.snp.gsa(collection="kegg", method="aSPUpath")
 gobp.aSPUpath <- run.snp.gsa(collection="gobp", method="aSPUpath")
 bader.aSPUpath <- run.snp.gsa(collection="bader", method="aSPUpath")
 
 
-# Run HYST and order results by significance
+# Run HYST on gene set collections
 
 kegg.hyst <- run.snp.gsa(collection="kegg", method="HYST")
 gobp.hyst <- run.snp.gsa(collection="gobp", method="HYST")
