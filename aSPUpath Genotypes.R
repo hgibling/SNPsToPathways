@@ -151,7 +151,7 @@ for (i in 1:ncol(bound.no.impute)) {
 		person.test[j,2] <- num.na/total.snps
 	}
 }
-# no people had more than 5% missing SNP values
+# no people had more than 5% missing values
 
 snp.test <- data.frame(SNP=NA, Missing=NA)
 k <- 0
@@ -163,16 +163,23 @@ for (i in 1:nrow(bound.no.impute)) {
 		snp.test[k,1] <- i
 		snp.test[k,2] <- num.na/total.samples
 	}
-	if (i %% 10 == 0) {
+	if (i %% 100 == 0) {
 		print(paste("done SNP", i, "of", total.snps))
 	}
 }
+# 88 SNPs had more than 5% missing values
+
+
+# Remove SNPs with more than 5% missing values
+
+control.removed <- control.genotypes[-snp.test$SNP,]
+case.removed <- case.genotypes[-snp.test$SNP,]
 
 
 # Impute missing genotypes
 
-control.imputed <- impute.knn(as.matrix(control.genotypes))
-case.imputed <- impute.knn(as.matrix(case.genotypes))
+control.imputed <- impute.knn(as.matrix(control.removed))
+case.imputed <- impute.knn(as.matrix(case.removed))
 
 control.rounded <- round(control.imputed$data)
 case.rounded <- round(case.imputed$data)
