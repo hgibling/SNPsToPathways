@@ -134,6 +134,41 @@ control.genotypes <- control.data[,-(1:6)]
 case.genotypes <- case.data[,-(1:6)]
 
 
+# Test for excessive missing values
+
+bound.no.impute <- cbind(control.genotypes, case.genotypes)
+total.samples <- ncol(bound.no.impute)
+total.snps <- nrow(bound.no.impute)
+
+person.test <- data.frame(Person=NA, Missing=NA)
+j <- 0
+
+for (i in 1:ncol(bound.no.impute)) {
+	num.na <- length(which(is.na(bound.no.impute[,i]==T)))
+	if (num.na/total.snps) > 0.05) {
+		j <- j+1
+		person.test[j,1] <- i
+		person.test[j,2] <- num.na/total.snps
+	}
+}
+# no people had more than 5% missing SNP values
+
+snp.test <- data.frame(SNP=NA, Missing=NA)
+k <- 0
+
+for (i in 1:nrow(bound.no.impute)) {
+	num.na <- length(which(is.na(bound.no.impute[i,]==T)))
+	if (num.na/total.samples > 0.05) {
+		k <- k+1
+		snp.test[k,1] <- i
+		snp.test[k,2] <- num.na/total.samples
+	}
+	if (i %% 10 == 0) {
+		print(paste("done SNP", i, "of", total.snps))
+	}
+}
+
+
 # Impute missing genotypes
 
 control.imputed <- impute.knn(as.matrix(control.genotypes))
