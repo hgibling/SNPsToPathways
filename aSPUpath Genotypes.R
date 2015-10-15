@@ -100,7 +100,7 @@ genes.in.gs <- function(gene.set.position, gene.set.list, master.gene.info) {
 
 ### Extract SNP info from dataset
 
-all.snp.info < data.frame(SNP=assoc.data[,2], Chrom=assoc.data[,1], Position=assoc.data[,3])
+all.snp.info <- data.frame(SNP=assoc.data[,2], Chrom=assoc.data[,1], Position=assoc.data[,3])
 
 
 ### Find SNPs associated with genes in a gene set
@@ -134,10 +134,19 @@ control.genotypes <- control.data[,-(1:6)]
 case.genotypes <- case.data[,-(1:6)]
 
 
+# Impute missing genotypes
+
+control.imputed <- impute.knn(as.matrix(control.genotypes))
+case.imputed <- impute.knn(as.matrix(case.genotypes))
+
+control.rounded <- round(control.imputed$data)
+case.rounded <- round(case.imputed$data)
+
+
 # Bind cases and controls
 
-control.trans <- t(control.genotypes)
-case.trans <- t(case.genotypes)
+control.trans <- t(control.rounded)
+case.trans <- t(case.rounded)
 
 all.genotypes <- rbind(control.trans, case.trans)
 
