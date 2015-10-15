@@ -1,4 +1,4 @@
-##### Getting Pathway p-values using aSPUpath or HYST #####
+##### Getting Pathway p-values using aSPUpath or HYST on pre-determined p values #####
 
 library(aSPU)
 library(gage)
@@ -247,79 +247,3 @@ kegg.hyst <- run.snp.gsa(collection="kegg", method="HYST")
 gobp.hyst <- run.snp.gsa(collection="gobp", method="HYST")
 bader.hyst <- run.snp.gsa(collection="bader", method="HYST")
 
-
-### Data prep for running aSPUpath on raw genotypes instead of p values
-
-control.data <- read.table("~/Desktop/GO_Quad_DATA-clean-CEU.traw", stringsAsFactors=F, header=T)
-
-case.data <- read.table("~/Desktop/GO_Quad_DATA-clean-ASW.traw", stringsAsFactors=F, header=T)
-
-rownames(control.data) <- control.data$SNP
-rownames(case.data) <- case.data$SNP
-
-	
-# Remove uneccesary columns
-
-control.genotypes <- control.data[,-(1:6)]
-case.genotypes <- case.data[,-(1:6)]
-
-
-# Bind cases and controls
-
-tcontrol <- t(control.genotypes)
-tcase <- t(case.genotypes)
-
-all.genotypes <- rbind(tcontrol, tcase)
-
-
-# Get SNP genotypes for a gene set
-
-get.snp.geno <- function(genotypes, snp.info) {
-	position <- which(colnames(genotypes) %in% snp.info[,1]==T)
-	snps <- genotypes[,position]
-	snps.order <- snps[,order(colnames(snps))]
-	return(snps.order)
-}
-
-
-# Get phenotype vector
-
-pheno <- c(rep(0, ncol(control.genotypes)), rep(1, ncol(case.genotypes)))
-
-
-run.aspupath <- function(collection, phenotypes, genotypes, min=10, max=300) {
-	results.df <- data.frame(Pathway=NA, Pval=NA)
-	if (collection=="kegg") {
-		gs <- kegg.gs[1:5]
-		all.gene.info <- kegg.gene.info
-	} else if (collection=="gobp") {
-		gs <- gobp.gs
-		all.gene.info <- gobp.gene.info
-	} else if (collection=="bader") {
-		gs <- bader.gs
-		all.gene.info <- bader.gene.info
-	} else {
-		stop("Must indicate if collection is 'kegg', 'gobp', or 'bader'.")
-	}
-	for (i in 1:length(gs)) {
-		if (length(gs[[i]]) > min & length(gs[[i]]) < max) {
-			gene.info <- genes.in.gs(i, gs, all.gene.info)
-			snp.info <- snps.in.gs(gene.info)
-			geno <- get.snp.geno(genotypes, snp.info)
-			results <- aSPUpath(phenotypes, 	# P values of SNPs
-				geno,							# correlation of SNPs
-				snp.info=snp.info,				# SNP location info
-				gene.info=gene.info)			# gene location info
-			results.df[i,1] <- names(gs[i])
-			results.df[i,2] <- results[length(results)] #aSPUpath is last
-			print(paste("analyzed gene set", i))
-		} else {
-			print(paste("skipped gene set", i))
-		}
-	}
-	results.df <- na.omit(results.df) %>%
-	arrange(Pval)
-	return(results.df)
-}
-
-test <- run.aspupath(collection="kegg", phenotypes=pheno, genotypes=all.genotypes)
