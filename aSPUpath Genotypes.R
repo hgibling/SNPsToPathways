@@ -115,7 +115,6 @@ snps.in.gs <- function(gene.info) {
 	snp.info <- snp.info[order(snp.info$SNP),]
 	return(snp.info)
 }
-# double check that this works for X and Y chromosomes
 
 
 ### Data prep for genotypes
