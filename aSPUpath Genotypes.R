@@ -116,6 +116,9 @@ snps.in.gs <- function(gene.info) {
 	return(snp.info)
 }
 
+# assigns SNPs position anywhere between 20kb downstream and 20kb upstream of a gene to that gene
+# can be adjusted if desired
+
 
 ### Data prep for genotypes
 
@@ -241,5 +244,8 @@ run.aspupath <- function(collection, phenotypes, genotypes, min=10, max=300) {
 	arrange(Pval)
 	return(results.df)
 }
+
+# loops through each gene set in the chosen collection and runs aSPUpath on the gene set, returning the adapted p-values
+# MUST ADD CORRECTION FOR MULTIPLE HYPOTHESIS TESTING--not currently included
 
 test <- run.aspupath(collection="kegg", phenotypes=pheno, genotypes=all.genotypes)
