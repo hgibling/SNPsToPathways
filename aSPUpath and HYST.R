@@ -143,7 +143,9 @@ snps.in.gs <- function(gene.info) {
 	snp.info <- snp.info[order(snp.info$SNP),]
 	return(snp.info)
 }
-# double check that this works for X and Y chromosomes
+
+# assigns SNPs position anywhere between 20kb downstream and 20kb upstream of a gene to that gene
+# can be adjusted if desired
 
 
 ### Generate linkage disequilibrium matrix (SNP correlation matrix) for SNPs within a gene set
@@ -232,6 +234,9 @@ run.snp.gsa <- function(collection, method, min=10, max=300) {
 	arrange(Pval)
 	return(results.df)
 }
+
+# loops through each gene set in the chosen collection and runs either aSPUpath or HYST on the gene set, returning the (adapted) p-values
+# MUST ADD CORRECTION FOR MULTIPLE HYPOTHESIS TESTING--not currently included
 
 
 # Run aSPUpath on gene set collections
