@@ -1,16 +1,18 @@
 ##### Preparing Plink Output for GSA-SNP Software #####
 
-# load sample dataset
+### Load sample dataset
 
 assoc.data <- read.table("~/Desktop/gwas.assoc", header=T)
 permuted.pvals <- read.csv("~/Desktop/perm_pvalues.txt")
 
 
-# combine SNP IDs with P values
+### Combine SNP IDs with P values
 
-gsasnp.input <- data.frame(SNP=assoc.data$SNP, P=assoc.data$P, P.0=permuted.pvals$P, permuted.pvals[,-1])
+gsasnp.input <- data.frame(SNP=assoc.data$SNP, P=assoc.data$P, permuted.pvals[,-1], P.100=permuted.pvals[,1])
+
+# first permuted column renamed 'P.100' so avoid having two columns named 'P'
 
 
-# print file
+### Print file
 
 write.table(gsasnp.input, "~/Desktop/GSA-SNP Input.txt", col.names=T, row.names=F, sep="\t", quote=F)
