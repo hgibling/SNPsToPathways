@@ -11,7 +11,7 @@ library(dplyr)
 
 ### Load sample dataset
 
-assoc.data <- read.table("~/Desktop/gwas.assoc", header=T)
+assoc.data <- read.table("gwas.assoc", header=T)
 
 
 # SNP data needed from Plink:
@@ -19,7 +19,7 @@ assoc.data <- read.table("~/Desktop/gwas.assoc", header=T)
 	# Chromosome location
 	# Base pair location
 	# P value
-	# Correlation data
+	# Control genotypes
 
 
 ### Generate gene set collections
@@ -31,6 +31,7 @@ kegg.gs <- get.kegg.gs$kg.sets
 
 
 # GO Biological Pathways
+
 gobp.gs <- annFUN.org("BP", mapping="org.Hs.eg.db", ID="entrez")
 
 
@@ -72,11 +73,17 @@ mart <- useMart("ensembl", dataset="hsapiens_gene_ensembl")
 
 get.gene.info <- function (master.list, type="ID") {
 	if (type=="symbol") {
-		all.gene.info <- getBM(attributes=c("hgnc_symbol", "chromosome_name", 		"start_position", "end_position"), filters=c("chromosome_name", 		"hgnc_symbol"), values=list(chromosome_name=c(1:22, "X", "Y"), 					hgnc_symbol=c(master.list)), mart=mart)
+		all.gene.info <- getBM(attributes=c("hgnc_symbol", "chromosome_name", "start_position", "end_position"),
+		filters=c("chromosome_name", "hgnc_symbol"),
+		values=list(chromosome_name=c(1:22, "X", "Y"),
+		hgnc_symbol=c(master.list)), mart=mart)
 	} else if (type=="ID") {
-		all.gene.info <- getBM(attributes=c("entrezgene", "chromosome_name", 		"start_position", "end_position"), filters=c("chromosome_name", 		"entrezgene"), values=list(chromosome_name=c(1:22, "X", "Y"), 					entrezgene=c(master.list)), mart=mart)
+		all.gene.info <- getBM(attributes=c("entrezgene", "chromosome_name", "start_position", "end_position"),
+		filters=c("chromosome_name", "entrezgene"),
+		values=list(chromosome_name=c(1:22, "X", "Y"),
+		entrezgene=c(master.list)), mart=mart)
 	} else {
-		stop("Type of gene identification must be either 'ID' (default) or 		'symbol'.")
+		stop("Type of gene identification must be either 'ID' (default) or 'symbol'.")
 	}
 }
 
@@ -100,17 +107,29 @@ genes.in.gs <- function(gene.set.position, gene.set.list, master.gene.info) {
 
 ### Extract SNP info from dataset
 
-# Remove SNPs with MAF < 0.05% in controls
+all.snp.info <- data.frame(SNP=assoc.data[,2], Chrom=assoc.data[,1], Position=assoc.data[,3])
 
-rare.snps <- which(assoc.data$F_U<0.05)
-assoc.clean <- assoc.data[-rare.snps,]
 
-clean.snp.info <- data.frame(SNP=assoc.clean[,2], Chrom=assoc.clean[,1], Position=assoc.clean[,3])
+### Find SNPs associated with genes in a gene set
+
+snps.in.gs <- function(gene.info) {
+	snp.info <- data.frame(NULL)
+	for (i in 1:nrow(gene.info)) {
+		snp.info.gene <- filter(all.snp.info, Chrom==gene.info[i,2]) %>%
+		filter(Position > gene.info[i,3]-20000 & Position < gene.info[i,4]+20000)
+		snp.info <- unique(rbind(snp.info, snp.info.gene))
+	}
+	snp.info <- snp.info[order(snp.info$SNP),]
+	return(snp.info)
+}
+
+# gets SNPs positioned anywhere between 20kb downstream and 20kb upstream of a gene 
+# can be adjusted if desired
 
 
 ### Prepare genotype data for generating linkage disequilibrium matrix (SNP correlation matrix)
 
-control.data <- read.table("~/Desktop/GO_Quad_DATA-clean-CEU.traw", stringsAsFactors=F, header=T)
+control.data <- read.table("GO_Quad_DATA-clean-CEU.traw", stringsAsFactors=F, header=T)
 
 rownames(control.data) <- control.data$SNP
 
@@ -120,32 +139,10 @@ rownames(control.data) <- control.data$SNP
 control.genotypes <- control.data[,-(1:6)]
 
 
-# Remove SNPs with MAF < 0.05 in controls
-
-control.genotypes.clean <- control.genotypes[-rare.snps,]
-
-
 # Impute missing values
 
-control.imputed <- impute.knn(as.matrix(control.genotypes.clean))
+control.imputed <- impute.knn(as.matrix(control.genotypes))
 control.rounded <- round(control.imputed$data)
-
-
-### Find SNPs associated with genes in a gene set
-
-snps.in.gs <- function(gene.info) {
-	snp.info <- data.frame(NULL)
-	for (i in 1:nrow(gene.info)) {
-		snp.info.gene <- filter(clean.snp.info, Chrom==gene.info[i,2]) %>%
-		filter(Position > gene.info[i,3]-20000 & Position < gene.info[i,4]+20000)
-		snp.info <- unique(rbind(snp.info, snp.info.gene))
-	}
-	snp.info <- snp.info[order(snp.info$SNP),]
-	return(snp.info)
-}
-
-# assigns SNPs position anywhere between 20kb downstream and 20kb upstream of a gene to that gene
-# can be adjusted if desired
 
 
 ### Generate linkage disequilibrium matrix (SNP correlation matrix) for SNPs within a gene set
@@ -158,7 +155,7 @@ get.ld.matrix <- function(snp.info) {
 	ld.matrix <- cor(control.trans)
 	if (anyNA(ld.matrix)==T) {
 		pos <- which(is.na(ld.matrix[1,])==T)
-		ld.matrix <- ld.matrix[-pos, -pos]
+		ld.matrix <- ld.matrix[-pos, -pos]		# remove NAs from LD matrix
 	}
 	return(ld.matrix)
 }
@@ -197,10 +194,10 @@ run.snp.gsa <- function(collection, method, min=10, max=300) {
 				snp.info <- snps.in.gs(gene.info)
 				snp.pvals <- get.p.values(snp.info)
 				ld.matrix <- get.ld.matrix(snp.info)
-				results <- aSPUsPath(snp.pvals, 	# P values of SNPs
-					corrSNP=ld.matrix,				# correlation of SNPs
-					snp.info=snp.info,				# SNP location info
-					gene.info=gene.info,			# gene location info
+				results <- aSPUsPath(snp.pvals,
+					corrSNP=ld.matrix,
+					snp.info=snp.info,
+					gene.info=gene.info,
 					Ps=T)							# P values instead of Z scores
 				results.df[i,1] <- names(gs[i])
 				results.df[i,2] <- results[length(results)] #aSPUpath is last
