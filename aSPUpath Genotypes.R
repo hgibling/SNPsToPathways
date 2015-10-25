@@ -11,7 +11,7 @@ library(dplyr)
 
 ### Load sample dataset
 
-assoc.data <- read.table("~/Desktop/gwas.assoc", header=T)
+assoc.data <- read.table("gwas.assoc", header=T)
 
 
 # SNP data needed from Plink:
@@ -31,12 +31,13 @@ kegg.gs <- get.kegg.gs$kg.sets
 
 
 # GO Biological Pathways
+
 gobp.gs <- annFUN.org("BP", mapping="org.Hs.eg.db", ID="entrez")
 
 
 # Import predefined gene sets from Bader Lab
 
-get.bader.gs <- GSA.read.gmt("~/Desktop/Human_AllPathways_January_28_2015_symbol.gmt")
+get.bader.gs <- GSA.read.gmt("Human_AllPathways_January_28_2015_symbol.gmt")
 
 
 # Remove blank entry at end of each Bader Lab gene set
@@ -72,11 +73,17 @@ mart <- useMart("ensembl", dataset="hsapiens_gene_ensembl")
 
 get.gene.info <- function (master.list, type="ID") {
 	if (type=="symbol") {
-		all.gene.info <- getBM(attributes=c("hgnc_symbol", "chromosome_name", 		"start_position", "end_position"), filters=c("chromosome_name", 		"hgnc_symbol"), values=list(chromosome_name=c(1:22, "X", "Y"), 					hgnc_symbol=c(master.list)), mart=mart)
+		all.gene.info <- getBM(attributes=c("hgnc_symbol", "chromosome_name", "start_position", "end_position"),
+		filters=c("chromosome_name", "hgnc_symbol"),
+		values=list(chromosome_name=c(1:22, "X", "Y"),
+		hgnc_symbol=c(master.list)), mart=mart)
 	} else if (type=="ID") {
-		all.gene.info <- getBM(attributes=c("entrezgene", "chromosome_name", 		"start_position", "end_position"), filters=c("chromosome_name", 		"entrezgene"), values=list(chromosome_name=c(1:22, "X", "Y"), 					entrezgene=c(master.list)), mart=mart)
+		all.gene.info <- getBM(attributes=c("entrezgene", "chromosome_name", "start_position", "end_position"),
+		filters=c("chromosome_name", "entrezgene"),
+		values=list(chromosome_name=c(1:22, "X", "Y"),
+		entrezgene=c(master.list)), mart=mart)
 	} else {
-		stop("Type of gene identification must be either 'ID' (default) or 		'symbol'.")
+		stop("Type of gene identification must be either 'ID' (default) or 'symbol'.")
 	}
 }
 
@@ -122,9 +129,9 @@ snps.in.gs <- function(gene.info) {
 
 ### Data prep for genotypes
 
-control.data <- read.table("~/Desktop/GO_Quad_DATA-clean-CEU.traw", stringsAsFactors=F, header=T)
+control.data <- read.table("GO_Quad_DATA-clean-CEU.traw", stringsAsFactors=F, header=T)
 
-case.data <- read.table("~/Desktop/GO_Quad_DATA-clean-ASW.traw", stringsAsFactors=F, header=T)
+case.data <- read.table("GO_Quad_DATA-clean-ASW.traw", stringsAsFactors=F, header=T)
 
 rownames(control.data) <- control.data$SNP
 rownames(case.data) <- case.data$SNP
@@ -136,52 +143,10 @@ control.genotypes <- control.data[,-(1:6)]
 case.genotypes <- case.data[,-(1:6)]
 
 
-# Test for excessive missing values
-
-bound.no.impute <- cbind(control.genotypes, case.genotypes)
-total.samples <- ncol(bound.no.impute)
-total.snps <- nrow(bound.no.impute)
-
-person.test <- data.frame(Person=NA, Missing=NA)
-j <- 0
-
-for (i in 1:ncol(bound.no.impute)) {
-	num.na <- length(which(is.na(bound.no.impute[,i]==T)))
-	if (num.na/total.snps) > 0.05) {
-		j <- j+1
-		person.test[j,1] <- i
-		person.test[j,2] <- num.na/total.snps
-	}
-}
-# no people had more than 5% missing values
-
-snp.test <- data.frame(SNP=NA, Missing=NA)
-k <- 0
-
-for (i in 1:nrow(bound.no.impute)) {
-	num.na <- length(which(is.na(bound.no.impute[i,]==T)))
-	if (num.na/total.samples > 0.05) {
-		k <- k+1
-		snp.test[k,1] <- i
-		snp.test[k,2] <- num.na/total.samples
-	}
-	if (i %% 100 == 0) {
-		print(paste("done SNP", i, "of", total.snps))
-	}
-}
-# 88 SNPs had more than 5% missing values
-
-
-# Remove SNPs with more than 5% missing values
-
-control.removed <- control.genotypes[-snp.test$SNP,]
-case.removed <- case.genotypes[-snp.test$SNP,]
-
-
 # Impute missing genotypes
 
-control.imputed <- impute.knn(as.matrix(control.removed))
-case.imputed <- impute.knn(as.matrix(case.removed))
+control.imputed <- impute.knn(as.matrix(control.genotypes))
+case.imputed <- impute.knn(as.matrix(case.genotypes))
 
 control.rounded <- round(control.imputed$data)
 case.rounded <- round(case.imputed$data)
@@ -189,10 +154,7 @@ case.rounded <- round(case.imputed$data)
 
 # Bind cases and controls
 
-control.trans <- t(control.rounded)
-case.trans <- t(case.rounded)
-
-all.genotypes <- rbind(control.trans, case.trans)
+all.genotypes <- rbind(t(control.rounded), t(case.rounded))
 
 
 # Get SNP genotypes for a gene set
@@ -210,10 +172,12 @@ get.snp.geno <- function(genotypes, snp.info) {
 pheno <- c(rep(0, ncol(control.genotypes)), rep(1, ncol(case.genotypes)))
 
 
+### Run aSPUpath for any of the three gene set colelctions
+
 run.aspupath <- function(collection, phenotypes, genotypes, min=10, max=300) {
 	results.df <- data.frame(Pathway=NA, Pval=NA)
 	if (collection=="kegg") {
-		gs <- kegg.gs[1:5]
+		gs <- kegg.gs
 		all.gene.info <- kegg.gene.info
 	} else if (collection=="gobp") {
 		gs <- gobp.gs
@@ -235,9 +199,6 @@ run.aspupath <- function(collection, phenotypes, genotypes, min=10, max=300) {
 				gene.info=gene.info)			# gene location info
 			results.df[i,1] <- names(gs[i])
 			results.df[i,2] <- results[length(results)] #aSPUpath is last
-			print(paste("analyzed gene set", i))
-		} else {
-			print(paste("skipped gene set", i))
 		}
 	}
 	results.df <- na.omit(results.df) %>%
@@ -248,4 +209,6 @@ run.aspupath <- function(collection, phenotypes, genotypes, min=10, max=300) {
 # loops through each gene set in the chosen collection and runs aSPUpath on the gene set, returning the adapted p-values
 # MUST ADD CORRECTION FOR MULTIPLE HYPOTHESIS TESTING--not currently included
 
-test <- run.aspupath(collection="kegg", phenotypes=pheno, genotypes=all.genotypes)
+kegg.aSPUpath.geno <- run.aspupath(collection="kegg", phenotypes=pheno, genotypes=all.genotypes)
+gobp.aSPUpath.geno <- run.aspupath(collection="gobp", phenotypes=pheno, genotypes=all.genotypes)
+bader.aSPUpath.geno <- run.aspupath(collection="bader", phenotypes=pheno, genotypes=all.genotypes)
