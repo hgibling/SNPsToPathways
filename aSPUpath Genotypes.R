@@ -123,7 +123,7 @@ snps.in.gs <- function(gene.info) {
 	return(snp.info)
 }
 
-# assigns SNPs position anywhere between 20kb downstream and 20kb upstream of a gene to that gene
+# gets SNPs positioned anywhere between 20kb downstream and 20kb upstream of a gene 
 # can be adjusted if desired
 
 
@@ -193,10 +193,10 @@ run.aspupath <- function(collection, phenotypes, genotypes, min=10, max=300) {
 			gene.info <- genes.in.gs(i, gs, all.gene.info)
 			snp.info <- snps.in.gs(gene.info)
 			geno <- get.snp.geno(genotypes, snp.info)
-			results <- aSPUpath(phenotypes, 	# P values of SNPs
-				geno,							# correlation of SNPs
-				snp.info=snp.info,				# SNP location info
-				gene.info=gene.info)			# gene location info
+			results <- aSPUpath(phenotypes,
+				geno,
+				snp.info=snp.info,
+				gene.info=gene.info)
 			results.df[i,1] <- names(gs[i])
 			results.df[i,2] <- results[length(results)] #aSPUpath is last
 		}
