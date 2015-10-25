@@ -32,7 +32,9 @@ kegg.gs <- get.kegg.gs$kg.sets
 
 # GO Biological Pathways
 
-gobp.gs <- annFUN.org("BP", mapping="org.Hs.eg.db", ID="entrez")
+get.gobp.gs <- GSA.read.gmt("Homo_sapiens_GSEA_GO_sets_bp_ids_highquality_April_2015.gmt")
+gobp.gs <- get.gobp.gs$genesets
+names(gobp.gs) <- get.gobp.gs$geneset.names
 
 
 # Import predefined gene sets from Bader Lab
