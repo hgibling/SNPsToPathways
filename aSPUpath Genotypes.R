@@ -200,7 +200,10 @@ run.aspupath <- function(collection, phenotypes, genotypes, min=10, max=300) {
 				snp.info=snp.info,
 				gene.info=gene.info)
 			results.df[i,1] <- names(gs[i])
-			results.df[i,2] <- results[length(results)] #aSPUpath is last
+			results.df[i,2] <- results[length(results)] # aSPUpath is last
+		}
+		if (i %% 10 == 0 ) {
+			print(paste("Done set", i, "of", length(gs)))	# prints progress
 		}
 	}
 	results.df <- na.omit(results.df) %>%
