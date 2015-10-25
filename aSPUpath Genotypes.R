@@ -3,7 +3,6 @@
 library(aSPU)
 library(gage)
 library(biomaRt)
-library(topGO)
 library(GSA)
 library(impute)
 library(dplyr)
