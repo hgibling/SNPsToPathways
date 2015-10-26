@@ -38,7 +38,7 @@ names(gobp.gs) <- get.gobp.gs$geneset.names
 
 # Import predefined gene sets from Bader Lab
 
-get.bader.gs <- GSA.read.gmt("~/Desktop/Human_AllPathways_January_28_2015_symbol.gmt")
+get.bader.gs <- GSA.read.gmt("Human_AllPathways_January_28_2015_symbol.gmt")
 
 
 # Remove blank entry at end of each Bader Lab gene set
@@ -222,9 +222,9 @@ run.snp.gsa <- function(collection, method, min=10, max=300) {
 					gene.info=gene.info)
 				results.df[i,1] <- names(gs[i])
 				results.df[i,2] <- results[length(results)]
-				print(paste("analyzed gene set", i))
-			} else {
-				print(paste("skipped gene set", i))
+			}
+			if (i %% 10 == 0 ) {
+				print(paste("Done set", i, "of", length(gs)))	# prints progress
 			}
 		}
 	} else {
