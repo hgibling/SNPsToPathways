@@ -106,9 +106,11 @@ genes.in.gs <- function(gene.set.position, gene.set.list, master.gene.info) {
 }
 
 
-### Extract SNP info from dataset
+### Extract SNP info from dataset (MAF>5% in controls)
 
-all.snp.info <- data.frame(SNP=assoc.data[,2], Chrom=assoc.data[,1], Position=assoc.data[,3])
+rare.snps <- which(assoc.data$F_U < 0.05)
+assoc.clean <- assoc.data[-rare.snps,]
+all.snp.info <- data.frame(SNP=assoc.clean[,2], Chrom=assoc.clean[,1], Position=assoc.clean[,3])
 
 
 ### Find SNPs associated with genes in a gene set
@@ -135,9 +137,9 @@ control.data <- read.table("GO_Quad_DATA-clean-CEU.traw", stringsAsFactors=F, he
 rownames(control.data) <- control.data$SNP
 
 
-# Remove uneccesary columns
+# Remove uneccesary columns and rare SNPS
 
-control.genotypes <- control.data[,-(1:6)]
+control.genotypes <- control.data[-rare.snps,-(1:6)]
 
 
 # Impute missing values
