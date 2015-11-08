@@ -204,9 +204,9 @@ run.snp.gsa <- function(collection, method, min=10, max=300) {
 					Ps=T)							# P values instead of Z scores
 				results.df[i,1] <- names(gs[i])
 				results.df[i,2] <- results[length(results)] #aSPUpath is last
-				print(paste("analyzed gene set", i))
-			} else {
-				print(paste("skipped gene set", i))
+			}
+			if (i %% 10 == 0 ) {
+				print(paste("Done set", i, "of", length(gs)))	# prints progress
 			}
 		}
 	} else if (method=="HYST") {
